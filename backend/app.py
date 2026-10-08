@@ -4,6 +4,7 @@ from flask_jwt_extended import JWTManager
 from config import Config
 from models import db
 from auth import auth_bp, bcrypt
+from user_profile import profile_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -14,6 +15,7 @@ bcrypt.init_app(app)
 JWTManager(app)
 
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(profile_bp, url_prefix="/api/profile")
 
 
 @app.route("/")
