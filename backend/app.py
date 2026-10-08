@@ -5,6 +5,7 @@ from config import Config
 from models import db
 from auth import auth_bp, bcrypt
 from user_profile import profile_bp
+from logs import logs_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -16,7 +17,7 @@ JWTManager(app)
 
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(profile_bp, url_prefix="/api/profile")
-
+app.register_blueprint(logs_bp, url_prefix="/api/logs")
 
 @app.route("/")
 def home():
