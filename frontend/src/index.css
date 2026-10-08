@@ -1,0 +1,61 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f4f7f6;
+  color: #1f2d2b;
+}
+
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 28px;
+  background: #1e6f5c;
+  color: white;
+}
+.navbar .brand { font-size: 1.3rem; font-weight: 700; color: white; text-decoration: none; }
+.navbar nav { display: flex; gap: 18px; align-items: center; }
+.navbar a { color: white; text-decoration: none; }
+.navbar button {
+  background: white; color: #1e6f5c; border: none;
+  padding: 6px 14px; border-radius: 6px; cursor: pointer; font-weight: 600;
+}
+
+.content { flex: 1; padding: 28px; max-width: 1000px; width: 100%; margin: 0 auto; }
+
+.footer { text-align: center; padding: 14px; font-size: 0.85rem; color: #5b6b68; }
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 28px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+}
+.auth-card { max-width: 440px; margin: 20px auto; }
+.auth-card h2 { margin-top: 0; color: #1e6f5c; }
+
+form label { display: block; margin: 14px 0 6px; font-weight: 600; font-size: 0.92rem; }
+form input[type="text"], form input[type="email"], form input[type="password"],
+form input[type="number"], form select {
+  width: 100%; padding: 10px 12px; border: 1px solid #c5d0cd;
+  border-radius: 8px; font-size: 1rem;
+}
+form input:focus, form select:focus { outline: 2px solid #1e6f5c; border-color: #1e6f5c; }
+
+form label.checkbox { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; font-size: 0.85rem; }
+form label.checkbox input { margin-top: 4px; }
+
+form button[type="submit"] {
+  width: 100%; margin-top: 20px; padding: 12px; border: none; border-radius: 8px;
+  background: #1e6f5c; color: white; font-size: 1rem; font-weight: 600; cursor: pointer;
+}
+form button[type="submit"]:disabled { background: #8db5ab; cursor: not-allowed; }
+
+.alert { padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 0.92rem; }
+.alert.error { background: #fdecea; color: #a12622; }
+.alert.success { background: #e6f4ea; color: #1b6b35; }
+.muted { color: #5b6b68; font-size: 0.92rem; text-align: center; margin-top: 18px; }
