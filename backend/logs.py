@@ -52,13 +52,18 @@ def validate_values(data):
         return None, "Meal regularity must be Regular, Slightly irregular or Irregular."
     clean["meal_regularity"] = data["meal_regularity"]
 
-    try:
-        mood = int(data.get("mood"))
-    except (TypeError, ValueError):
-        return None, "Mood must be a number from 1 to 5."
-    if mood < 1 or mood > 5:
-        return None, "Mood must be a number from 1 to 5."
-    clean["mood"] = mood
+    # Mood is optional (decision: Option A). Stored only if the user chooses to rate it.
+    mood_raw = data.get("mood")
+    if mood_raw in (None, ""):
+        clean["mood"] = None
+    else:
+        try:
+            mood = int(mood_raw)
+        except (TypeError, ValueError):
+            return None, "Mood must be a number from 1 to 5."
+        if mood < 1 or mood > 5:
+            return None, "Mood must be a number from 1 to 5."
+        clean["mood"] = mood
 
     stress = data.get("self_reported_stress")
     if stress in (None, ""):

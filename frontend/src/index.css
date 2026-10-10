@@ -59,3 +59,20 @@ form button[type="submit"]:disabled { background: #8db5ab; cursor: not-allowed; 
 .alert.error { background: #fdecea; color: #a12622; }
 .alert.success { background: #e6f4ea; color: #1b6b35; }
 .muted { color: #5b6b68; font-size: 0.92rem; text-align: center; margin-top: 18px; }
+
+form input[type="date"] {
+  width: 100%; padding: 10px 12px; border: 1px solid #c5d0cd;
+  border-radius: 8px; font-size: 1rem;
+}
+.alert.info { background: #e8f1fb; color: #1a4f8b; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e3eae8; white-space: nowrap; }
+th { background: #f0f5f4; color: #1e6f5c; }
+td.actions { display: flex; gap: 6px; }
+td.actions button {
+  padding: 5px 10px; border: 1px solid #1e6f5c; background: white; color: #1e6f5c;
+  border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+}
+td.actions button.danger { border-color: #a12622; color: #a12622; }

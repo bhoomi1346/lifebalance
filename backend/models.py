@@ -34,7 +34,7 @@ class DailyLog(db.Model):
     activity_minutes = db.Column(db.Integer, nullable=False)
     water_litres = db.Column(db.Float, nullable=False)
     meal_regularity = db.Column(db.Enum("Regular", "Slightly irregular", "Irregular"), nullable=False)
-    mood = db.Column(db.Integer, nullable=False)
+    mood = db.Column(db.Integer, nullable=True)
     self_reported_stress = db.Column(db.Enum("Low", "Moderate", "High"))
     source = db.Column(db.Enum("manual", "wearable"), default="manual", nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
