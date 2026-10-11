@@ -1,7 +1,8 @@
 from datetime import date, datetime, timedelta
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import db, DailyLog
+from models import db, DailyLog, Prediction
+from predictor import run_prediction
 
 logs_bp = Blueprint("logs", __name__)
 
@@ -83,6 +84,38 @@ def parse_date(text):
         return None
 
 
+def save_prediction(log):
+    """Runs the model on a saved record and stores the result (FR-4.5).
+    Returns the result, or None if prediction failed. The daily record is kept either way."""
+    values = {
+        "sleep_hours": log.sleep_hours,
+        "working_hours": log.working_hours,
+        "activity_minutes": log.activity_minutes,
+        "water_litres": log.water_litres,
+        "meal_regularity": log.meal_regularity,
+    }
+    try:
+        result = run_prediction(values)
+        p = result["probabilities"]
+        db.session.add(Prediction(
+            log_id=log.log_id,
+            stress_level=result["stress_level"],
+            prob_low=p.get("Low"),
+            prob_moderate=p.get("Moderate"),
+            prob_high=p.get("High"),
+            wlb_score=result["wlb_score"],
+            wlb_band=result["wlb_band"],
+            top_factors=result["top_factors"],
+            model_version=result["model_version"],
+        ))
+        db.session.commit()
+        return result
+    except Exception as exc:
+        db.session.rollback()
+        print("Prediction could not be saved:", exc)
+        return None
+
+
 @logs_bp.route("", methods=["POST"])
 @jwt_required()
 def create_log():
@@ -109,7 +142,13 @@ def create_log():
     log = DailyLog(user_id=user_id, log_date=log_date, source="manual", **clean)
     db.session.add(log)
     db.session.commit()
-    return jsonify({"message": "Daily record saved.", "log": log_to_dict(log)}), 201
+
+    prediction = save_prediction(log)
+    return jsonify({
+        "message": "Daily record saved.",
+        "log": log_to_dict(log),
+        "prediction": prediction,
+    }), 201
 
 
 @logs_bp.route("", methods=["GET"])
@@ -152,7 +191,13 @@ def update_log(log_id):
         setattr(log, key, value)
     log.source = "manual"
     db.session.commit()
-    return jsonify({"message": "Daily record updated.", "log": log_to_dict(log)}), 200
+
+    prediction = save_prediction(log)
+    return jsonify({
+        "message": "Daily record updated.",
+        "log": log_to_dict(log),
+        "prediction": prediction,
+    }), 200
 
 
 @logs_bp.route("/<int:log_id>", methods=["DELETE"])
