@@ -19,6 +19,7 @@ export default function Layout() {
             <>
               <Link to="/">Dashboard</Link>
               <Link to="/daily">Daily Entry</Link>
+              <Link to="/calendar">Calendar</Link>
               <Link to="/profile">Profile</Link>
               <button onClick={handleLogout}>Logout</button>
             </>

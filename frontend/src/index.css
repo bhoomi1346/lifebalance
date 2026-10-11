@@ -115,3 +115,24 @@ td.actions button.danger { border-color: #a12622; color: #a12622; }
 .view-toggle button.active { background: #1e6f5c; color: white; }
 .chart-title { font-size: 1rem; color: #1e6f5c; margin: 20px 0 8px; }
 .doughnut-wrap { max-width: 320px; margin: 0 auto; }
+
+.cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.cal-header button { padding: 6px 12px; border: 1px solid #1e6f5c; background: white;
+  color: #1e6f5c; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 12px; }
+.cal-weekday { text-align: center; font-size: 0.8rem; font-weight: 700; color: #5b6b68; padding: 4px 0; }
+.cal-blank { min-height: 74px; }
+.cal-cell { border-radius: 8px; padding: 6px; min-height: 74px; border: 1px solid #e3eae8;
+  background: #fafcfb; font-size: 0.78rem; }
+.cal-date { font-weight: 700; color: #1f2d2b; }
+.cal-label { font-weight: 600; margin-top: 2px; }
+.cal-score { color: #5b6b68; margin-top: 2px; }
+.cal-low { background: #e6f4ea; color: #1b6b35; }
+.cal-moderate { background: #fff4d6; color: #7a5300; }
+.cal-high { background: #fdecea; color: #a12622; }
+.cal-unscored { background: #eef1f4; color: #3d4a57; }
+.cal-none { background: #fafcfb; color: #8a9995; }
+.cal-cell.cal-low, .cal-cell.cal-moderate, .cal-cell.cal-high,
+.cal-cell.cal-unscored, .cal-cell.cal-none { border-color: transparent; }
+.cal-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 0.85rem; color: #5b6b68; }
+.swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
