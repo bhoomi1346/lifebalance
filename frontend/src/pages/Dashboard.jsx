@@ -49,6 +49,15 @@ export default function Dashboard() {
 
   return (
     <div>
+      {data.warning && (
+        <div
+          className={`alert ${data.warning.type === "persistent_high" ? "error" : "info"}`}
+          style={{ marginBottom: 16 }}
+        >
+          <strong>{data.warning.title}.</strong> {data.warning.message}
+        </div>
+      )}
+
       <div className="card">
         <h2 style={{ marginTop: 0, color: "#1e6f5c" }}>Today</h2>
         {t && t.stress_level ? (

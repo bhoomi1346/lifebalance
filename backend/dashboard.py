@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, DailyLog, Prediction, Recommendation
+from early_warning import check_warning
 
 dash_bp = Blueprint("dashboard", __name__)
 
@@ -28,6 +29,14 @@ def week_summary(user_id, start, end):
     }
 
 
+def latest_prediction(log_id):
+    return (
+        Prediction.query.filter_by(log_id=log_id)
+        .order_by(Prediction.created_at.desc())
+        .first()
+    )
+
+
 @dash_bp.route("/summary", methods=["GET"])
 @jwt_required()
 def summary():
@@ -38,11 +47,7 @@ def summary():
     today_log = DailyLog.query.filter_by(user_id=user_id, log_date=today).first()
     today_block = None
     if today_log:
-        pred = (
-            Prediction.query.filter_by(log_id=today_log.log_id)
-            .order_by(Prediction.created_at.desc())
-            .first()
-        )
+        pred = latest_prediction(today_log.log_id)
         top_tip = (
             Recommendation.query.filter_by(log_id=today_log.log_id)
             .order_by(Recommendation.priority, Recommendation.rec_id)
@@ -56,12 +61,30 @@ def summary():
             "top_tip": top_tip.text.split(" Why: ")[0] if top_tip else None,
         }
 
+    # Early warning from the last 7 days of stress levels (FR-4.6, SAF-2)
+    recent_logs = (
+        DailyLog.query.filter(
+            DailyLog.user_id == user_id,
+            DailyLog.log_date >= today - timedelta(days=6),
+            DailyLog.log_date <= today,
+        )
+        .order_by(DailyLog.log_date)
+        .all()
+    )
+    levels = []
+    for lg in recent_logs:
+        p = latest_prediction(lg.log_id)
+        if p:
+            levels.append(p.stress_level)
+    warning = check_warning(levels)
+
     # Week-over-week: last 7 days vs the 7 days before that
     this_week = week_summary(user_id, today - timedelta(days=6), today)
     last_week = week_summary(user_id, today - timedelta(days=13), today - timedelta(days=7))
 
     return jsonify({
         "today": today_block,
+        "warning": warning,
         "this_week": this_week,
         "last_week": last_week,
         "disclaimer": "General wellness estimate from a statistical model. Not medical advice or diagnosis.",
