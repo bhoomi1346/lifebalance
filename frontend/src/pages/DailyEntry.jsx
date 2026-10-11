@@ -89,6 +89,20 @@ export default function DailyEntry() {
     }
   };
 
+  const updateTipStatus = async (recId, status) => {
+    try {
+      await api.put(`/recommendations/${recId}/status`, { status });
+      setPrediction((p) => ({
+        ...p,
+        recommendations: p.recommendations.map((r) =>
+          r.rec_id === recId ? { ...r, status } : r
+        ),
+      }));
+    } catch {
+      setError("Could not save your feedback. Please try again.");
+    }
+  };
+
   const handleEdit = (log) => {
     setMessage("");
     setError("");
@@ -140,6 +154,39 @@ export default function DailyEntry() {
               </ul>
             </>
           )}
+
+          {prediction.recommendations && prediction.recommendations.length > 0 && (
+            <>
+              <h3 className="tips-title">Suggestions for you</h3>
+              <ul className="tips">
+                {prediction.recommendations.map((r) => {
+                  const [advice, why] = r.text.split(" Why: ");
+                  return (
+                    <li key={r.rec_id} className={`tip tip-${r.status}`}>
+                      <div className="tip-text">{advice}</div>
+                      {why && <div className="tip-why">Why: {why}</div>}
+                      <div className="tip-actions">
+                        {r.status === "done" && <span className="tip-badge done">Done</span>}
+                        {r.status === "not_relevant" && <span className="tip-badge skip">Not relevant</span>}
+                        {r.status === "new" && (
+                          <>
+                            <button type="button" onClick={() => updateTipStatus(r.rec_id, "done")}>
+                              Done
+                            </button>
+                            <button type="button" className="secondary"
+                              onClick={() => updateTipStatus(r.rec_id, "not_relevant")}>
+                              Not relevant
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
           <p className="muted" style={{ textAlign: "left" }}>{prediction.disclaimer}</p>
           <button type="button" onClick={() => setPrediction(null)}>Close</button>
         </div>

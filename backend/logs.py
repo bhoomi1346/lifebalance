@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, DailyLog, Prediction
 from predictor import run_prediction
+from recommendation_store import store_recommendations
 
 logs_bp = Blueprint("logs", __name__)
 
@@ -109,6 +110,7 @@ def save_prediction(log):
             model_version=result["model_version"],
         ))
         db.session.commit()
+        result["recommendations"] = store_recommendations(log, result)
         return result
     except Exception as exc:
         db.session.rollback()

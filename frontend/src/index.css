@@ -84,3 +84,18 @@ td.actions button.danger { border-color: #a12622; color: #a12622; }
 .stress-high { color: #a12622; }
 .factors { margin: 4px 0 12px 20px; padding: 0; color: #1f2d2b; }
 .factors li { margin-bottom: 4px; }
+
+.tips-title { font-size: 1.05rem; color: #1e6f5c; margin: 16px 0 8px; }
+.tips { list-style: none; padding: 0; margin: 0 0 12px; }
+.tip { border: 1px solid #e3eae8; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+.tip-done { background: #f1f8f4; }
+.tip-not_relevant { background: #f7f7f7; opacity: 0.7; }
+.tip-text { font-weight: 600; font-size: 0.95rem; }
+.tip-why { color: #5b6b68; font-size: 0.85rem; margin-top: 4px; }
+.tip-actions { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+.tip-actions button { padding: 5px 12px; font-size: 0.85rem; border-radius: 6px;
+  border: 1px solid #1e6f5c; background: #1e6f5c; color: white; cursor: pointer; }
+.tip-actions button.secondary { background: white; color: #1e6f5c; }
+.tip-badge { font-size: 0.85rem; font-weight: 600; }
+.tip-badge.done { color: #1b6b35; }
+.tip-badge.skip { color: #5b6b68; }
