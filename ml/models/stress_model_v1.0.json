@@ -1,0 +1,29 @@
+{
+  "version": "v1.0",
+  "algorithm": "SVM",
+  "features": [
+    "sleep_hours",
+    "working_hours",
+    "activity_minutes",
+    "water_litres",
+    "sleep_deficit",
+    "work_to_sleep_ratio",
+    "activity_target_met",
+    "meal_regularity",
+    "hydration_level"
+  ],
+  "trained_on_rows": 3200,
+  "hold_out_accuracy": 0.7575,
+  "hold_out_macro_f1": 0.7603,
+  "high_recall": 0.815,
+  "cv_results": {
+    "Random Forest": 0.7457,
+    "Decision Tree": 0.7187,
+    "Logistic Regression": 0.7404,
+    "SVM": 0.7722
+  },
+  "random_seed": 42,
+  "sklearn_version": "1.9.1",
+  "dataset": "data/stress_clean.csv",
+  "file_size_mb": 0.26
+}
