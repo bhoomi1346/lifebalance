@@ -24,7 +24,7 @@ const emptyForm = () => ({
   activity_minutes: "",
   water_litres: "",
   meal_regularity: "Regular",
-  mood: "3",
+  mood: "",
   self_reported_stress: "",
 });
 
@@ -34,6 +34,7 @@ export default function DailyEntry() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [prediction, setPrediction] = useState(null);
 
   const loadLogs = () =>
     api
@@ -74,13 +75,11 @@ export default function DailyEntry() {
 
     setSaving(true);
     try {
-      if (existing) {
-        await api.put(`/logs/${existing.log_id}`, payload);
-        setMessage("Record updated.");
-      } else {
-        await api.post("/logs", payload);
-        setMessage("Record saved.");
-      }
+      const res = existing
+        ? await api.put(`/logs/${existing.log_id}`, payload)
+        : await api.post("/logs", payload);
+      setMessage(existing ? "Record updated." : "Record saved.");
+      setPrediction(res.data.prediction || null);
       setForm(emptyForm());
       await loadLogs();
     } catch (err) {
@@ -93,6 +92,7 @@ export default function DailyEntry() {
   const handleEdit = (log) => {
     setMessage("");
     setError("");
+    setPrediction(null);
     setForm({
       log_date: log.log_date,
       sleep_hours: String(log.sleep_hours),
@@ -100,7 +100,7 @@ export default function DailyEntry() {
       activity_minutes: String(log.activity_minutes),
       water_litres: String(log.water_litres),
       meal_regularity: log.meal_regularity,
-      mood: String(log.mood),
+      mood: log.mood === null ? "" : String(log.mood),
       self_reported_stress: log.self_reported_stress || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -111,6 +111,7 @@ export default function DailyEntry() {
     try {
       await api.delete(`/logs/${log.log_id}`);
       setMessage("Record deleted.");
+      setPrediction(null);
       await loadLogs();
     } catch {
       setError("Could not delete the record.");
@@ -119,6 +120,31 @@ export default function DailyEntry() {
 
   return (
     <div>
+      {prediction && (
+        <div className="card auth-card prediction">
+          <h2>Your result for the day</h2>
+          <p className="result-line">
+            Stress: <strong className={`stress-${prediction.stress_level.toLowerCase()}`}>
+              {prediction.stress_level}
+            </strong>
+            {"  "}({Math.round(prediction.probabilities[prediction.stress_level] * 100)}% confidence)
+          </p>
+          <p className="result-line">
+            Balance score: <strong>{prediction.wlb_score} / 100</strong> ({prediction.wlb_band})
+          </p>
+          {prediction.top_factors.length > 0 && (
+            <>
+              <p className="muted" style={{ textAlign: "left", marginBottom: 4 }}>What affected it most:</p>
+              <ul className="factors">
+                {prediction.top_factors.map((f) => <li key={f}>{f}</li>)}
+              </ul>
+            </>
+          )}
+          <p className="muted" style={{ textAlign: "left" }}>{prediction.disclaimer}</p>
+          <button type="button" onClick={() => setPrediction(null)}>Close</button>
+        </div>
+      )}
+
       <div className="card auth-card">
         <h2>Daily entry</h2>
         {existing && (
@@ -162,7 +188,7 @@ export default function DailyEntry() {
             {MEALS.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
 
-          <label>Mood (1 = very low, 5 = very good)</label>
+          <label>Mood (optional, 1 = very low, 5 = very good)</label>
           <select name="mood" value={form.mood} onChange={handleChange}>
             <option value="">Prefer not to say</option>
             {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
@@ -202,7 +228,7 @@ export default function DailyEntry() {
                     <td>{l.activity_minutes} min</td>
                     <td>{l.water_litres} L</td>
                     <td>{l.meal_regularity}</td>
-                    <td>{l.mood}</td>
+                    <td>{l.mood ?? "-"}</td>
                     <td>{l.self_reported_stress || "-"}</td>
                     <td className="actions">
                       <button type="button" onClick={() => handleEdit(l)}>Edit</button>

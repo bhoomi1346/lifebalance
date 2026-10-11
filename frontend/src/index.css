@@ -76,3 +76,11 @@ td.actions button {
   border-radius: 6px; cursor: pointer; font-size: 0.85rem;
 }
 td.actions button.danger { border-color: #a12622; color: #a12622; }
+
+.prediction { border-left: 5px solid #1e6f5c; }
+.result-line { font-size: 1.05rem; margin: 8px 0; }
+.stress-low { color: #1b6b35; }
+.stress-moderate { color: #b26a00; }
+.stress-high { color: #a12622; }
+.factors { margin: 4px 0 12px 20px; padding: 0; color: #1f2d2b; }
+.factors li { margin-bottom: 4px; }
