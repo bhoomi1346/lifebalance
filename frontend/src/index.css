@@ -136,3 +136,8 @@ td.actions button.danger { border-color: #a12622; color: #a12622; }
 .cal-cell.cal-unscored, .cal-cell.cal-none { border-color: transparent; }
 .cal-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 0.85rem; color: #5b6b68; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+
+button.cal-cell { font: inherit; text-align: left; cursor: pointer; width: 100%; color: inherit; }
+.cal-cell.cal-selected { outline: 3px solid #1e6f5c; outline-offset: 1px; }
+.day-panel { margin-top: 20px; }
+.day-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
