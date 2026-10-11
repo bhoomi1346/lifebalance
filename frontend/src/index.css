@@ -108,3 +108,10 @@ td.actions button.danger { border-color: #a12622; color: #a12622; }
 .trend-good { color: #1b6b35; font-weight: 600; }
 .trend-bad { color: #a12622; font-weight: 600; }
 .muted-inline { color: #5b6b68; }
+
+.view-toggle { display: flex; gap: 8px; margin-bottom: 12px; }
+.view-toggle button { padding: 6px 14px; border: 1px solid #1e6f5c; background: white;
+  color: #1e6f5c; border-radius: 6px; cursor: pointer; font-weight: 600; }
+.view-toggle button.active { background: #1e6f5c; color: white; }
+.chart-title { font-size: 1rem; color: #1e6f5c; margin: 20px 0 8px; }
+.doughnut-wrap { max-width: 320px; margin: 0 auto; }
