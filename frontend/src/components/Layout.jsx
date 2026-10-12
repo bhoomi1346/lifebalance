@@ -21,6 +21,7 @@ export default function Layout() {
               <Link to="/daily">Daily Entry</Link>
               <Link to="/calendar">Calendar</Link>
               <Link to="/simulator">Simulator</Link>
+              <Link to="/chat">Assistant</Link>
               <Link to="/profile">Profile</Link>
               <button onClick={handleLogout}>Logout</button>
             </>
