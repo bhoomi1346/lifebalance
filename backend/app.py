@@ -10,6 +10,7 @@ from predict import predict_bp
 from recommendations_api import recs_bp
 from dashboard import dash_bp
 from calendar_api import cal_bp
+from simulator import sim_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -26,6 +27,7 @@ app.register_blueprint(predict_bp, url_prefix="/api/predict")
 app.register_blueprint(recs_bp, url_prefix="/api/recommendations")
 app.register_blueprint(dash_bp, url_prefix="/api/dashboard")
 app.register_blueprint(cal_bp, url_prefix="/api/calendar")
+app.register_blueprint(sim_bp, url_prefix="/api/simulate")
 
 
 @app.route("/")
