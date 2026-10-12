@@ -1,0 +1,19 @@
+{
+  "version": "v1",
+  "intents": [
+    "greeting",
+    "sleep",
+    "stress",
+    "work_life_balance",
+    "activity",
+    "hydration_food",
+    "tips",
+    "report_request",
+    "help"
+  ],
+  "examples": 182,
+  "cv_macro_f1": 0.8012,
+  "confidence_threshold": 0.5,
+  "sklearn_version": "1.9.1",
+  "random_seed": 42
+}
