@@ -141,3 +141,12 @@ button.cal-cell { font: inherit; text-align: left; cursor: pointer; width: 100%;
 .cal-cell.cal-selected { outline: 3px solid #1e6f5c; outline-offset: 1px; }
 .day-panel { margin-top: 20px; }
 .day-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+
+.slider-row { margin: 14px 0 4px; }
+.slider-row label { display: block; font-weight: 600; font-size: 0.92rem; margin-bottom: 4px; }
+.slider-row input[type="range"] { width: 100%; accent-color: #1e6f5c; }
+.sim-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.sim-actions button { padding: 10px 16px; border: none; border-radius: 8px; background: #1e6f5c;
+  color: white; font-weight: 600; cursor: pointer; }
+.sim-actions button.secondary { background: white; color: #1e6f5c; border: 1px solid #1e6f5c; }
+.sim-actions button:disabled { background: #8db5ab; cursor: not-allowed; }
