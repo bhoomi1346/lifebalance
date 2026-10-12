@@ -12,6 +12,7 @@ from dashboard import dash_bp
 from calendar_api import cal_bp
 from simulator import sim_bp
 from chatbot import chat_bp
+from reports import reports_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,6 +31,7 @@ app.register_blueprint(dash_bp, url_prefix="/api/dashboard")
 app.register_blueprint(cal_bp, url_prefix="/api/calendar")
 app.register_blueprint(sim_bp, url_prefix="/api/simulate")
 app.register_blueprint(chat_bp, url_prefix="/api/chat")
+app.register_blueprint(reports_bp, url_prefix="/api/reports")
 
 
 @app.route("/")
