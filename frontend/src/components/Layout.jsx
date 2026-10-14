@@ -22,6 +22,7 @@ export default function Layout() {
               <Link to="/calendar">Calendar</Link>
               <Link to="/simulator">Simulator</Link>
               <Link to="/chat">Assistant</Link>
+              <Link to="/reports">Reports</Link>
               <Link to="/profile">Profile</Link>
               <button onClick={handleLogout}>Logout</button>
             </>

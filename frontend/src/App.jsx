@@ -9,6 +9,7 @@ import DailyEntry from "./pages/DailyEntry";
 import Calendar from "./pages/Calendar";
 import Simulator from "./pages/Simulator";
 import Chat from "./pages/Chat";
+import Reports from "./pages/Reports";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
         <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       </Route>
     </Routes>
