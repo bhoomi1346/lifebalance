@@ -1,24 +1,33 @@
 import os
 import joblib
 import pandas as pd
+from models import ModelRegistry
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE, "..", "ml", "models", "stress_model_v1.0.joblib")
-MODEL_VERSION = "v1.0"
+MODEL_DIR = os.path.join(BASE, "..", "ml", "models")
 DISCLAIMER = "General wellness estimate from a statistical model. Not medical advice or diagnosis."
 
 MEAL_SCORE = {"Regular": 100, "Slightly irregular": 60, "Irregular": 20}
 MEAL_RISK = {"Regular": 0.0, "Slightly irregular": 0.5, "Irregular": 1.1}
 
-_model = None
+_cache = {"version": None, "model": None}
+
+
+def active_version():
+    """The model marked active in the registry. Falls back to v1.0 if none is registered."""
+    row = (ModelRegistry.query.filter_by(is_active=True)
+           .order_by(ModelRegistry.model_id.desc()).first())
+    return row.version if row else "v1.0"
 
 
 def get_model():
-    """Loads the model once, the first time it is needed."""
-    global _model
-    if _model is None:
-        _model = joblib.load(MODEL_PATH)
-    return _model
+    """Loads the active model, and reloads it only when the active version changes."""
+    version = active_version()
+    if _cache["version"] != version:
+        path = os.path.join(MODEL_DIR, f"stress_model_{version}.joblib")
+        _cache["model"] = joblib.load(path)
+        _cache["version"] = version
+    return _cache["model"], version
 
 
 def build_features(v):
@@ -82,7 +91,7 @@ def main_factors(v):
 
 def run_prediction(v):
     """Returns the full prediction for one day's clean values."""
-    model = get_model()
+    model, version = get_model()
     proba = model.predict_proba(build_features(v))[0]
     probabilities = {cls: round(float(p), 3) for cls, p in zip(model.classes_, proba)}
     stress_level = max(probabilities, key=probabilities.get)
@@ -93,6 +102,6 @@ def run_prediction(v):
         "wlb_score": score,
         "wlb_band": band,
         "top_factors": main_factors(v),
-        "model_version": MODEL_VERSION,
+        "model_version": version,
         "disclaimer": DISCLAIMER,
     }

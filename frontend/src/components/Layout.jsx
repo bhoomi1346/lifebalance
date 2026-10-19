@@ -24,6 +24,7 @@ export default function Layout() {
               <Link to="/chat">Assistant</Link>
               <Link to="/reports">Reports</Link>
               <Link to="/connected">Devices</Link>
+              {user.role === "admin" && <Link to="/admin">Admin</Link>}
               <Link to="/profile">Profile</Link>
               <button onClick={handleLogout}>Logout</button>
             </>

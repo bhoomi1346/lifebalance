@@ -17,6 +17,7 @@ from reports import reports_bp
 from report_pdf import pdf_bp
 from report_excel import excel_bp
 from wearable_api import wear_bp
+from admin_api import admin_bp
 from scheduler import start_scheduler
 
 app = Flask(__name__)
@@ -40,6 +41,7 @@ app.register_blueprint(reports_bp, url_prefix="/api/reports")
 app.register_blueprint(pdf_bp, url_prefix="/api/reports")
 app.register_blueprint(excel_bp, url_prefix="/api/reports")
 app.register_blueprint(wear_bp, url_prefix="/api/wearable")
+app.register_blueprint(admin_bp, url_prefix="/api/admin")
 
 
 @app.route("/")
@@ -48,8 +50,6 @@ def home():
 
 
 if __name__ == "__main__":
-    # Debug mode starts the code twice (once to watch for file changes).
-    # Only the real server process starts the scheduler, so the sync doesn't run twice.
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         start_scheduler(app)
     app.run(debug=True)

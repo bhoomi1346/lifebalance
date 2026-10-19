@@ -1,9 +1,10 @@
 from models import db, Recommendation, UserProfile
 from recommender import build_recommendations
+from app_settings import get_rules
 
 
 def store_recommendations(log, prediction):
-    """Creates the day's tips and saves them (FR-5.1).
+    """Creates the day's tips using the current admin rules and saves them (FR-5.1).
     Replaces the tips from an earlier save of the same record.
     Returns the saved tips, or an empty list if something failed."""
     try:
@@ -20,7 +21,7 @@ def store_recommendations(log, prediction):
             "water_litres": log.water_litres,
             "meal_regularity": log.meal_regularity,
         }
-        tips = build_recommendations(values, prediction, profile)
+        tips = build_recommendations(values, prediction, profile, rules=get_rules())
 
         Recommendation.query.filter_by(log_id=log.log_id).delete()
         new_rows = []

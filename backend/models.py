@@ -124,3 +124,9 @@ class ModelRegistry(db.Model):
     trained_on_rows = db.Column(db.Integer)
     is_active = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class AppSetting(db.Model):
+    __tablename__ = "app_settings"
+    key = db.Column(db.String(60), primary_key=True)
+    value = db.Column(db.JSON, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,0 +1,20 @@
+{
+  "version": "v1.1",
+  "algorithm": "SVM",
+  "accuracy": 0.7575,
+  "macro_f1": 0.7603,
+  "high_recall": 0.815,
+  "trained_on_rows": 3200,
+  "features": [
+    "sleep_hours",
+    "working_hours",
+    "activity_minutes",
+    "water_litres",
+    "sleep_deficit",
+    "work_to_sleep_ratio",
+    "activity_target_met",
+    "meal_regularity",
+    "hydration_level"
+  ],
+  "random_seed": 42
+}

@@ -11,6 +11,7 @@ import Simulator from "./pages/Simulator";
 import Chat from "./pages/Chat";
 import Reports from "./pages/Reports";
 import ConnectedApps from "./pages/ConnectedApps";
+import Admin from "./pages/Admin";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
         <Route path="/connected" element={<ProtectedRoute><ConnectedApps /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       </Route>
     </Routes>
