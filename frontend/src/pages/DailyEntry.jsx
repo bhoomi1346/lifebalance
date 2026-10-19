@@ -46,6 +46,25 @@ export default function DailyEntry() {
     loadLogs();
   }, []);
 
+   const fillFromWearable = async () => {
+    setError("");
+    try {
+      const res = await api.get("/wearable/day", { params: { date: form.log_date } });
+      if (!res.data.available) {
+        setError("No wearable data for this date. Open Devices, connect and sync first.");
+        return;
+      }
+      setForm((f) => ({
+        ...f,
+        sleep_hours: f.sleep_hours === "" && res.data.sleep_hours != null ? String(res.data.sleep_hours) : f.sleep_hours,
+        activity_minutes: f.activity_minutes === "" && res.data.active_minutes != null ? String(res.data.active_minutes) : f.activity_minutes,
+      }));
+      setMessage("Sleep and activity filled from your wearable. Check them before saving.");
+    } catch {
+      setError("Could not load wearable data.");
+    }
+  }; 
+
   const existing = logs.find((l) => l.log_date === form.log_date);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -246,6 +265,10 @@ export default function DailyEntry() {
             <option value="">Prefer not to say</option>
             {STRESS.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
+          
+          <button type="button" className="secondary" onClick={fillFromWearable}>
+            Fill sleep and activity from wearable
+          </button>
 
           <button type="submit" disabled={saving}>
             {saving ? "Saving..." : existing ? "Update record" : "Save record"}

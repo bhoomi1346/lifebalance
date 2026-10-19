@@ -10,6 +10,7 @@ import Calendar from "./pages/Calendar";
 import Simulator from "./pages/Simulator";
 import Chat from "./pages/Chat";
 import Reports from "./pages/Reports";
+import ConnectedApps from "./pages/ConnectedApps";
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/simulator" element={<ProtectedRoute><Simulator /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+        <Route path="/connected" element={<ProtectedRoute><ConnectedApps /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       </Route>
     </Routes>

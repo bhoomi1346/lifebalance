@@ -23,6 +23,7 @@ export default function Layout() {
               <Link to="/simulator">Simulator</Link>
               <Link to="/chat">Assistant</Link>
               <Link to="/reports">Reports</Link>
+              <Link to="/connected">Devices</Link>
               <Link to="/profile">Profile</Link>
               <button onClick={handleLogout}>Logout</button>
             </>
