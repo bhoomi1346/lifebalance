@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -16,6 +17,7 @@ from reports import reports_bp
 from report_pdf import pdf_bp
 from report_excel import excel_bp
 from wearable_api import wear_bp
+from scheduler import start_scheduler
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -46,4 +48,8 @@ def home():
 
 
 if __name__ == "__main__":
+    # Debug mode starts the code twice (once to watch for file changes).
+    # Only the real server process starts the scheduler, so the sync doesn't run twice.
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        start_scheduler(app)
     app.run(debug=True)

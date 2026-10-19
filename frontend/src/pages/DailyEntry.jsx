@@ -35,6 +35,7 @@ export default function DailyEntry() {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [prediction, setPrediction] = useState(null);
+  const [fromWearable, setFromWearable] = useState(false);
 
   const loadLogs = () =>
     api
@@ -59,6 +60,7 @@ export default function DailyEntry() {
         sleep_hours: f.sleep_hours === "" && res.data.sleep_hours != null ? String(res.data.sleep_hours) : f.sleep_hours,
         activity_minutes: f.activity_minutes === "" && res.data.active_minutes != null ? String(res.data.active_minutes) : f.activity_minutes,
       }));
+      setFromWearable(true);
       setMessage("Sleep and activity filled from your wearable. Check them before saving.");
     } catch {
       setError("Could not load wearable data.");
@@ -90,6 +92,7 @@ export default function DailyEntry() {
       meal_regularity: form.meal_regularity,
       mood: form.mood,
       self_reported_stress: form.self_reported_stress,
+      source: fromWearable ? "wearable" : "manual",
     };
 
     setSaving(true);
@@ -100,6 +103,7 @@ export default function DailyEntry() {
       setMessage(existing ? "Record updated." : "Record saved.");
       setPrediction(res.data.prediction || null);
       setForm(emptyForm());
+      setFromWearable(false);
       await loadLogs();
     } catch (err) {
       setError(err.response?.data?.error || "Could not save the record.");
@@ -136,6 +140,7 @@ export default function DailyEntry() {
       mood: log.mood === null ? "" : String(log.mood),
       self_reported_stress: log.self_reported_stress || "",
     });
+    setFromWearable(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 

@@ -9,6 +9,7 @@ logs_bp = Blueprint("logs", __name__)
 
 MEALS = ["Regular", "Slightly irregular", "Irregular"]
 STRESS_LEVELS = ["Low", "Moderate", "High"]
+SOURCES = ["manual", "wearable"]
 BACKFILL_DAYS = 30
 
 
@@ -25,6 +26,11 @@ def log_to_dict(log):
         "self_reported_stress": log.self_reported_stress,
         "source": log.source,
     }
+
+
+def clean_source(value):
+    """Only 'manual' or 'wearable' are allowed. Anything else is treated as manual."""
+    return value if value in SOURCES else "manual"
 
 
 def validate_values(data):
@@ -141,7 +147,8 @@ def create_log():
     if DailyLog.query.filter_by(user_id=user_id, log_date=log_date).first():
         return jsonify({"error": "A record already exists for this date. Edit it instead."}), 409
 
-    log = DailyLog(user_id=user_id, log_date=log_date, source="manual", **clean)
+    log = DailyLog(user_id=user_id, log_date=log_date,
+                   source=clean_source(data.get("source")), **clean)
     db.session.add(log)
     db.session.commit()
 
@@ -191,7 +198,7 @@ def update_log(log_id):
 
     for key, value in clean.items():
         setattr(log, key, value)
-    log.source = "manual"
+    log.source = clean_source(merged.get("source"))
     db.session.commit()
 
     prediction = save_prediction(log)
