@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
+import { Bar, Doughnut, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,14 +9,17 @@ import {
   LineElement,
   BarElement,
   ArcElement,
+  BarController,
+  DoughnutController,
+  PieController,
   Tooltip,
   Legend,
 } from "chart.js";
 import api from "../api";
 
 ChartJS.register(
-  CategoryScale, LinearScale, PointElement, LineElement,
-  BarElement, ArcElement, Tooltip, Legend
+  CategoryScale, LinearScale, PointElement, LineElement, BarElement, ArcElement,
+  BarController, DoughnutController, PieController, Tooltip, Legend
 );
 
 const VIEWS = [
@@ -24,6 +27,16 @@ const VIEWS = [
   { key: "weekly", label: "Weekly" },
   { key: "monthly", label: "Monthly" },
 ];
+
+const SLEEP_BANDS = ["Under 6 h", "6 to 7 h", "7 to 9 h", "Over 9 h"];
+const SLEEP_COLOURS = ["#d9736b", "#e8b74a", "#6fb08f", "#8fb8ab"];
+
+function sleepBand(hours) {
+  if (hours < 6) return 0;
+  if (hours < 7) return 1;
+  if (hours <= 9) return 2;
+  return 3;
+}
 
 function Arrow({ now, before, higherIsBetter = true }) {
   if (now === null || before === null) return <span className="muted-inline">no data</span>;
@@ -80,40 +93,36 @@ export default function Dashboard() {
   const points = range ? range.points : [];
   const labels = points.map((p) => p.label);
 
-  const lineData = {
-    labels,
+  // Pie: how the sleep average of each day (or period) falls into a sleep band
+  const bandCounts = [0, 0, 0, 0];
+  points.forEach((p) => {
+    if (p.avg_sleep !== null) bandCounts[sleepBand(p.avg_sleep)] += 1;
+  });
+  const sleepTotal = bandCounts.reduce((a, b) => a + b, 0);
+
+  const pieData = {
+    labels: SLEEP_BANDS,
     datasets: [
       {
-        label: "Average sleep (h)",
-        data: points.map((p) => p.avg_sleep),
-        borderColor: "#1e6f5c",
-        backgroundColor: "#1e6f5c",
-        yAxisID: "y",
-        spanGaps: true,
-        tension: 0.3,
-      },
-      {
-        label: "Balance score (0-100)",
-        data: points.map((p) => p.avg_wlb),
-        borderColor: "#c77d00",
-        backgroundColor: "#c77d00",
-        yAxisID: "y1",
-        spanGaps: true,
-        tension: 0.3,
+        data: bandCounts,
+        backgroundColor: SLEEP_COLOURS,
+        borderColor: "#ffffff",
+        borderWidth: 2,
       },
     ],
   };
-  const lineOptions = {
+  const pieOptions = {
     responsive: true,
-    interaction: { mode: "index", intersect: false },
-    scales: {
-      y: { position: "left", title: { display: true, text: "Hours" }, suggestedMin: 0, suggestedMax: 10 },
-      y1: {
-        position: "right",
-        title: { display: true, text: "Score" },
-        min: 0,
-        max: 100,
-        grid: { drawOnChartArea: false },
+    plugins: {
+      legend: { position: "bottom" },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => {
+            const count = ctx.raw;
+            const pct = sleepTotal ? Math.round((count / sleepTotal) * 100) : 0;
+            return `${ctx.label}: ${count} (${pct}%)`;
+          },
+        },
       },
     },
   };
@@ -124,7 +133,8 @@ export default function Dashboard() {
       {
         label: "Average activity (min)",
         data: points.map((p) => p.avg_activity),
-        backgroundColor: "#4a9d86",
+        backgroundColor: "#8fb8ab",
+        borderRadius: 6,
       },
     ],
   };
@@ -140,7 +150,7 @@ export default function Dashboard() {
     datasets: [
       {
         data: [totals.Low, totals.Moderate, totals.High],
-        backgroundColor: ["#2e8b57", "#e0a100", "#c0392b"],
+        backgroundColor: ["#6fb08f", "#e8b74a", "#d9736b"],
       },
     ],
   };
@@ -158,7 +168,7 @@ export default function Dashboard() {
       )}
 
       <div className="card">
-        <h2 style={{ marginTop: 0, color: "#1e6f5c" }}>Today</h2>
+        <h2 style={{ marginTop: 0 }}>Today</h2>
         {t && t.stress_level ? (
           <>
             <p className="result-line">
@@ -200,8 +210,10 @@ export default function Dashboard() {
           <p className="muted">No records in this period yet. Add daily entries to see your charts.</p>
         ) : (
           <>
-            <h3 className="chart-title">Sleep and balance score</h3>
-            <Line data={lineData} options={lineOptions} />
+            <h3 className="chart-title">Sleep bands ({sleepTotal} periods with sleep data)</h3>
+            <div style={{ maxWidth: 320, margin: "0 auto" }}>
+              <Pie data={pieData} options={pieOptions} />
+            </div>
 
             <h3 className="chart-title">Physical activity</h3>
             <Bar data={barData} options={barOptions} />
@@ -210,7 +222,7 @@ export default function Dashboard() {
             {totalDays === 0 ? (
               <p className="muted">No stress results in this period yet.</p>
             ) : (
-              <div className="doughnut-wrap">
+              <div style={{ maxWidth: 300, margin: "0 auto" }}>
                 <Doughnut data={doughnutData} options={doughnutOptions} />
               </div>
             )}
