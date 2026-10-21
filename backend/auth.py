@@ -4,6 +4,8 @@ from flask import Blueprint, request, jsonify
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from models import db, User, UserProfile
+from extensions import limiter
+from sanitize import clean_text
 
 auth_bp = Blueprint("auth", __name__)
 bcrypt = Bcrypt()
@@ -14,7 +16,7 @@ EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json(silent=True) or {}
-    name = (data.get("name") or "").strip()
+    name = clean_text(data.get("name"), 100)
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     consent = data.get("consent_given") is True
@@ -45,6 +47,7 @@ def register():
 
 
 @auth_bp.route("/login", methods=["POST"])
+@limiter.limit("5 per minute")
 def login():
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()

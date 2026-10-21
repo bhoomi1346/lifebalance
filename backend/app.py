@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from config import Config
 from models import db
+from extensions import limiter
 from auth import auth_bp, bcrypt
 from user_profile import profile_bp
 from logs import logs_bp
@@ -18,15 +19,24 @@ from report_pdf import pdf_bp
 from report_excel import excel_bp
 from wearable_api import wear_bp
 from admin_api import admin_bp
+from account import account_bp
 from scheduler import start_scheduler
 
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# CORS: only the React dev server may call the API from a browser (SR-5)
 CORS(app, origins=["http://localhost:5173", "http://localhost:3000"])
 db.init_app(app)
 bcrypt.init_app(app)
 JWTManager(app)
+limiter.init_app(app)
+
+
+@app.errorhandler(429)
+def too_many_requests(e):
+    return jsonify({"error": "Too many attempts. Please wait a minute and try again."}), 429
+
 
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(profile_bp, url_prefix="/api/profile")
@@ -42,6 +52,7 @@ app.register_blueprint(pdf_bp, url_prefix="/api/reports")
 app.register_blueprint(excel_bp, url_prefix="/api/reports")
 app.register_blueprint(wear_bp, url_prefix="/api/wearable")
 app.register_blueprint(admin_bp, url_prefix="/api/admin")
+app.register_blueprint(account_bp, url_prefix="/api/account")
 
 
 @app.route("/")

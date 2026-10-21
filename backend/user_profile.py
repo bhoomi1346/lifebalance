@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, UserProfile
+from sanitize import clean_text
 
 profile_bp = Blueprint("profile", __name__)
 
@@ -38,7 +39,7 @@ def update_profile():
         return jsonify({"error": "Profile not found."}), 404
 
     if "occupation" in data:
-        occupation = (data["occupation"] or "").strip()
+        occupation = clean_text(data["occupation"], 100)
         if len(occupation) > 100:
             return jsonify({"error": "Occupation is too long."}), 400
         profile.occupation = occupation

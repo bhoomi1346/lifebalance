@@ -5,6 +5,8 @@ import joblib
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, DailyLog, Prediction, UserProfile, ChatMessage
+from extensions import limiter
+from sanitize import clean_text
 from recommender import build_recommendations
 
 chat_bp = Blueprint("chat", __name__)
@@ -184,11 +186,12 @@ def action_links(keys):
 
 
 @chat_bp.route("", methods=["POST"])
+@limiter.limit("30 per minute")
 @jwt_required()
 def chat():
     user_id = int(get_jwt_identity())
     data = request.get_json(silent=True) or {}
-    message = (data.get("message") or "").strip()
+    message = clean_text(data.get("message"), 500)
     if not message:
         return jsonify({"error": "Type a message first."}), 400
     if len(message) > 500:

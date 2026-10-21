@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, DailyLog, Prediction
 from predictor import run_prediction
 from recommendation_store import store_recommendations
+from sanitize import safe_error
 
 logs_bp = Blueprint("logs", __name__)
 
@@ -120,7 +121,7 @@ def save_prediction(log):
         return result
     except Exception as exc:
         db.session.rollback()
-        print("Prediction could not be saved:", exc)
+        safe_error("Prediction could not be saved", exc)
         return None
 
 

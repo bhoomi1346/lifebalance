@@ -2,6 +2,7 @@ from datetime import date, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from models import db, WearableConnection, WearableData
 from wearable_adapters import ADAPTERS
+from sanitize import safe_error
 
 SYNC_DAYS = 7
 SYNC_HOUR = 6  # runs every day at 06:00 (SRS FR-10.4)
@@ -41,7 +42,7 @@ def run_daily_sync(app):
             except Exception as exc:
                 db.session.rollback()
                 failed += 1
-                print(f"Scheduled sync failed for user {conn.user_id}:", exc)
+                safe_error(f"Scheduled sync failed for user {conn.user_id}", exc)
         print(f"Scheduled sync: {done} user(s) synced, {failed} failed.")
         return done, failed
 

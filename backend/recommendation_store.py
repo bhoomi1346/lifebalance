@@ -1,7 +1,7 @@
 from models import db, Recommendation, UserProfile
 from recommender import build_recommendations
 from app_settings import get_rules
-
+from sanitize import safe_error
 
 def store_recommendations(log, prediction):
     """Creates the day's tips using the current admin rules and saves them (FR-5.1).
@@ -44,5 +44,5 @@ def store_recommendations(log, prediction):
         ]
     except Exception as exc:
         db.session.rollback()
-        print("Recommendations could not be saved:", exc)
+        safe_error("Recommendations could not be saved", exc)
         return []

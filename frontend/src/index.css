@@ -177,3 +177,7 @@ button.cal-cell { font: inherit; text-align: left; cursor: pointer; width: 100%;
 
 .report-dates { display: flex; gap: 14px; flex-wrap: wrap; }
 .report-dates > div { flex: 1; min-width: 160px; }
+
+.danger-btn { padding: 10px 16px; border: none; border-radius: 8px; background: #a12622;
+  color: white; font-weight: 600; cursor: pointer; }
+.danger-btn:disabled { background: #d9a09d; cursor: not-allowed; }

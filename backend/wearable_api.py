@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, WearableConnection, WearableData
 from wearable_adapters import ADAPTERS, ProviderNotConfigured
+from sanitize import safe_error
 
 wear_bp = Blueprint("wearable", __name__)
 
@@ -105,7 +106,7 @@ def sync():
         return jsonify({"error": str(exc)}), 503
     except Exception as exc:
         db.session.rollback()
-        print("Wearable sync failed:", exc)
+        safe_error("Wearable sync failed", exc)
         return jsonify({"error": "The sync did not finish. Your records are unchanged. Try again."}), 500
 
     db.session.refresh(conn)
