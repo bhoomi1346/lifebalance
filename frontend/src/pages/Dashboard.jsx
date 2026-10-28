@@ -29,7 +29,7 @@ const VIEWS = [
 ];
 
 const SLEEP_BANDS = ["Under 6 h", "6 to 7 h", "7 to 9 h", "Over 9 h"];
-const SLEEP_COLOURS = ["#d9736b", "#e8b74a", "#6fb08f", "#8fb8ab"];
+const SLEEP_COLOURS = ["#e9a03a", "#8277da", "#7cc4d6", "#f08f72"];
 
 function sleepBand(hours) {
   if (hours < 6) return 0;
@@ -133,7 +133,7 @@ export default function Dashboard() {
       {
         label: "Average activity (min)",
         data: points.map((p) => p.avg_activity),
-        backgroundColor: "#8fb8ab",
+        backgroundColor: "#a196e6",
         borderRadius: 6,
       },
     ],
@@ -150,7 +150,7 @@ export default function Dashboard() {
     datasets: [
       {
         data: [totals.Low, totals.Moderate, totals.High],
-        backgroundColor: ["#6fb08f", "#e8b74a", "#d9736b"],
+                backgroundColor: ["#3aa597", "#e9a03a", "#e4666b"],
       },
     ],
   };
@@ -167,7 +167,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="card">
+      <div className="card hero">
         <h2 style={{ marginTop: 0 }}>Today</h2>
         {t && t.stress_level ? (
           <>

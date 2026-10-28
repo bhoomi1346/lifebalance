@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api";
+import BotText from "./BotText";
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
@@ -74,7 +75,7 @@ export default function ChatWidget() {
             )}
             {messages.map((m, i) => (
               <div key={i} className={`bubble ${m.sender === "user" ? "bubble-user" : "bubble-bot"}`}>
-                <div>{m.message}</div>
+                {m.sender === "bot" ? <BotText text={m.message} /> : <div>{m.message}</div>}
                 {m.actions && m.actions.length > 0 && (
                   <div className="chat-actions">
                     {m.actions.map((a) => (

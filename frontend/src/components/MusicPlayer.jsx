@@ -1,90 +1,110 @@
 import { useEffect, useRef, useState } from "react";
 
+// Gentle C major pentatonic melody, about 66 beats per minute
+const SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33];
+const PATTERN = [0, 2, 4, 2, 5, 4, 2, 1, 0, 3, 4, 6, 4, 2, 1, 0];
+const BEAT = 60 / 66;
+
 export default function MusicPlayer() {
   const [playing, setPlaying] = useState(false);
-  const nodesRef = useRef(null);
+  const [error, setError] = useState("");
+  const ref = useRef(null);
 
   const start = () => {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) {
+      setError("Sound is not supported in this browser.");
+      return false;
+    }
     const ctx = new AudioCtx();
 
-    // Two seconds of soft "brown" noise, which sounds like distant waves
-    const length = ctx.sampleRate * 4;
-    const buffer = ctx.createBuffer(1, length, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < length; i++) {
-      const white = Math.random() * 2 - 1;
-      last = (last + 0.02 * white) / 1.02;
-      data[i] = last * 3.5;
-    }
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
-    noise.loop = true;
-
-    // Keep only the low, soft frequencies
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 500;
-
-    // Master volume: starts silent and fades in gently
     const master = ctx.createGain();
     master.gain.setValueAtTime(0.0001, ctx.currentTime);
-    master.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 4);
-
-    // A very slow swell, about one wave every 9 seconds
-    const swell = ctx.createGain();
-    swell.gain.value = 0.5;
-    const lfo = ctx.createOscillator();
-    lfo.frequency.value = 0.11;
-    const lfoDepth = ctx.createGain();
-    lfoDepth.gain.value = 0.4;
-    lfo.connect(lfoDepth);
-    lfoDepth.connect(swell.gain);
-
-    noise.connect(filter);
-    filter.connect(swell);
-    swell.connect(master);
+    master.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 2);
     master.connect(ctx.destination);
 
-    noise.start();
-    lfo.start();
+    // Soft echo
+    const delay = ctx.createDelay(2);
+    delay.delayTime.value = BEAT * 0.75;
+    const feedback = ctx.createGain();
+    feedback.gain.value = 0.35;
+    delay.connect(feedback);
+    feedback.connect(delay);
+    const echoOut = ctx.createGain();
+    echoOut.gain.value = 0.3;
+    delay.connect(echoOut);
+    echoOut.connect(master);
 
-    nodesRef.current = { ctx, noise, lfo, master };
+    const playNote = (freq, time, dur, vol) => {
+      const osc = ctx.createOscillator();
+      const env = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.value = freq;
+      env.gain.setValueAtTime(0.0001, time);
+      env.gain.exponentialRampToValueAtTime(vol, time + 0.06);
+      env.gain.exponentialRampToValueAtTime(0.0001, time + dur);
+      osc.connect(env);
+      env.connect(master);
+      env.connect(delay);
+      osc.start(time);
+      osc.stop(time + dur + 0.05);
+    };
+
+    let step = 0;
+    let nextTime = ctx.currentTime + 0.3;
+    const timer = setInterval(() => {
+      while (nextTime < ctx.currentTime + 0.8) {
+        const idx = PATTERN[step % PATTERN.length];
+        playNote(SCALE[idx], nextTime, BEAT * 1.6, 0.5);
+        if (step % 4 === 0) playNote(SCALE[0] / 2, nextTime, BEAT * 3.5, 0.25);
+        nextTime += BEAT;
+        step += 1;
+      }
+    }, 150);
+
+    ref.current = { ctx, master, timer };
+    return true;
   };
 
   const stop = () => {
-    const n = nodesRef.current;
-    if (!n) return;
-    n.master.gain.exponentialRampToValueAtTime(0.0001, n.ctx.currentTime + 1.5);
-    setTimeout(() => {
-      n.noise.stop();
-      n.lfo.stop();
-      n.ctx.close();
-    }, 1600);
-    nodesRef.current = null;
+    const r = ref.current;
+    if (!r) return;
+    clearInterval(r.timer);
+    r.master.gain.exponentialRampToValueAtTime(0.0001, r.ctx.currentTime + 1);
+    setTimeout(() => r.ctx.close(), 1200);
+    ref.current = null;
   };
 
   const toggle = () => {
+    setError("");
     if (playing) {
       stop();
       setPlaying(false);
     } else {
-      start();
-      setPlaying(true);
+      try {
+        if (start()) setPlaying(true);
+      } catch {
+        setError("The sound could not start. Click the button again.");
+      }
     }
   };
 
   useEffect(() => {
     return () => {
-      const n = nodesRef.current;
-      if (n) n.ctx.close();
+      const r = ref.current;
+      if (r) {
+        clearInterval(r.timer);
+        r.ctx.close();
+      }
     };
   }, []);
 
   return (
-    <button type="button" className="relax-fab" onClick={toggle}>
-      {playing ? "Pause ocean sound" : "Play ocean sound"}
-    </button>
+    <>
+      <button type="button" className="relax-fab" onClick={toggle}>
+        {playing ? "❚❚ Pause melody" : "♪ Play calm melody"}
+      </button>
+      {error && <div className="alert error sound-error">{error}</div>}
+    </>
   );
 }
