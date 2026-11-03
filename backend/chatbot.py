@@ -1,22 +1,20 @@
 import os
 from datetime import date, timedelta
 
-import joblib
+from groq import Groq
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from models import db, DailyLog, Prediction, UserProfile, ChatMessage
 from extensions import limiter
 from sanitize import clean_text
-from recommender import build_recommendations
 
 chat_bp = Blueprint("chat", __name__)
 
-BASE = os.path.dirname(os.path.abspath(__file__))
-INTENT_PATH = os.path.join(BASE, "..", "ml", "models", "intent_classifier_v1.joblib")
-THRESHOLD = 0.5
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = "openai/gpt-oss-20b"
 DISCLAIMER = "General wellness information, not medical advice or diagnosis."
 
-# Checked BEFORE the intent classifier (FR-7.7, SAF-4). Matching is deliberately broad.
+# ── Safety net (checked before Groq) ──────────────────────────────────────────
 SUPPORT_TERMS = [
     "suicid", "kill myself", "end my life", "end it all", "want to die", "wanna die",
     "hurt myself", "harm myself", "self harm", "self-harm", "cut myself", "overdose",
@@ -35,28 +33,6 @@ SAFETY_TEXT = (
     "I'm an app, so I can't check on you, which is why I'm asking you to talk to a real person."
 )
 
-NO_DATA = ("I don't have any daily records from the last 7 days yet. "
-           "Add a day on the Daily Entry page and I can use your data.")
-UNCLEAR_TEXT = ("I'm not sure I understood that. Try asking about your sleep, stress, "
-                "work-life balance, activity, water or meals, or type 'help'.")
-HELP_TEXT = ("I can answer questions about your sleep, stress, work-life balance, activity, "
-             "water and meals, using your own records. You can also ask for a tip. "
-             "Try: 'how was my sleep this week?' or 'what was my stress level?'")
-
-WORK_TIPS = {
-    "Remote": "When working from home, set a fixed time to stop and take a short break every hour.",
-    "Hybrid": "On office days and home days alike, keep one fixed end-of-day time.",
-    "Office": "Stand up and stretch for a couple of minutes every hour at your desk.",
-}
-DEFAULT_WORK_TIP = "Short breaks and a clear end-of-day time can help you switch off."
-
-GENERAL_TIPS = [
-    "Aim for a consistent bedtime and a wind-down routine 30 minutes before it.",
-    "Keep a water bottle nearby and sip regularly through the day.",
-    "A 10-minute walk or some gentle stretching counts toward your activity.",
-    "Try to eat at roughly the same times each day.",
-]
-
 LINKS = {
     "dashboard": ("Open dashboard", "/"),
     "daily": ("Add a daily record", "/daily"),
@@ -64,129 +40,149 @@ LINKS = {
     "simulator": ("Try the simulator", "/simulator"),
 }
 
-_clf = None
 
-
-def get_clf():
-    global _clf
-    if _clf is None:
-        _clf = joblib.load(INTENT_PATH)
-    return _clf
-
-
-def needs_support(text):
+def needs_support(text: str) -> bool:
     return any(term in text for term in SUPPORT_TERMS)
 
 
-def classify(text):
-    clf = get_clf()
-    probs = clf.predict_proba([text])[0]
-    best = int(probs.argmax())
-    if probs[best] < THRESHOLD:
-        return "unclear", float(probs[best])
-    return str(clf.classes_[best]), float(probs[best])
+# ── Data helpers ───────────────────────────────────────────────────────────────
 
-
-def recent_logs(user_id, days):
+def recent_logs(user_id: int, days: int):
     start = date.today() - timedelta(days=days - 1)
-    return (DailyLog.query.filter(DailyLog.user_id == user_id, DailyLog.log_date >= start)
+    return (DailyLog.query
+            .filter(DailyLog.user_id == user_id, DailyLog.log_date >= start)
             .order_by(DailyLog.log_date.desc()).all())
 
 
-def latest_log(user_id):
+def latest_log(user_id: int):
     return (DailyLog.query.filter_by(user_id=user_id)
             .order_by(DailyLog.log_date.desc()).first())
 
 
-def latest_prediction(log_id):
+def latest_prediction(log_id: int):
     return (Prediction.query.filter_by(log_id=log_id)
             .order_by(Prediction.created_at.desc()).first())
 
 
-def values_of(log):
-    return {"sleep_hours": log.sleep_hours, "working_hours": log.working_hours,
-            "activity_minutes": log.activity_minutes, "water_litres": log.water_litres,
-            "meal_regularity": log.meal_regularity}
+def get_profile(user_id: int):
+    return UserProfile.query.filter_by(user_id=user_id).first()
 
 
-def profile_dict(user_id):
-    p = UserProfile.query.filter_by(user_id=user_id).first()
-    return {"work_mode": p.work_mode if p else None}
+def build_user_context(user_id: int) -> str:
+    """Summarise the user's recent wellness data for the system prompt."""
+    lines = []
 
-
-def answer(intent, user_id, profile):
-    """Returns (text, list of action keys). Uses only this user's own records."""
-    if intent == "greeting":
-        return "Hello! " + HELP_TEXT, []
-    if intent == "help":
-        return HELP_TEXT, []
-    if intent == "report_request":
-        return ("Your progress is shown on the dashboard and the calendar. Downloadable "
-                "weekly and monthly reports come in a later step of the project."), ["dashboard", "calendar"]
-    if intent == "unclear":
-        return UNCLEAR_TEXT, []
-
-    latest = latest_log(user_id)
-
-    if intent == "tips":
-        if latest:
-            p = latest_prediction(latest.log_id)
-            if p:
-                recs = build_recommendations(values_of(latest), {"stress_level": p.stress_level},
-                                             {"work_mode": profile.get("work_mode")})
-                return "From your latest record: " + recs[0]["text"], ["daily"]
-        return "Here is a general idea: " + GENERAL_TIPS[0], ["daily"]
+    profile = get_profile(user_id)
+    if profile:
+        parts = []
+        if profile.occupation:
+            parts.append(f"occupation: {profile.occupation}")
+        if profile.work_mode:
+            parts.append(f"work mode: {profile.work_mode}")
+        if profile.age_group:
+            parts.append(f"age group: {profile.age_group}")
+        if parts:
+            lines.append("User profile — " + ", ".join(parts) + ".")
 
     week = recent_logs(user_id, 7)
     if not week:
-        return NO_DATA, ["daily"]
+        lines.append("No daily logs recorded in the last 7 days.")
+        return "\n".join(lines)
+
     n = len(week)
+    avg_sleep = round(sum(l.sleep_hours for l in week) / n, 1)
+    avg_work = round(sum(l.working_hours for l in week) / n, 1)
+    avg_activity = round(sum(l.activity_minutes for l in week) / n)
+    avg_water = round(sum(l.water_litres for l in week) / n, 1)
+    days_30min = sum(1 for l in week if l.activity_minutes >= 30)
 
-    if intent == "sleep":
-        avg = round(sum(l.sleep_hours for l in week) / n, 1)
-        return (f"Over your last {n} logged day(s), your sleep averaged {avg} hours. "
-                "Most adults do well with 7 to 9 hours. " + GENERAL_TIPS[0]), ["simulator"]
+    lines.append(
+        f"Last {n} logged day(s) — avg sleep: {avg_sleep} h, avg work: {avg_work} h, "
+        f"avg activity: {avg_activity} min/day ({days_30min} day(s) ≥ 30 min target), "
+        f"avg water: {avg_water} L."
+    )
 
-    if intent == "stress":
-        p = latest_prediction(latest.log_id)
-        if not p:
-            return (f"Your latest record ({latest.log_date}) has no stress estimate yet. "
-                    "Save it again to calculate one."), ["daily"]
-        return (f"Your latest estimate ({latest.log_date}) is {p.stress_level} stress. "
-                "It comes from a statistical model based on your habits, so treat it as a rough guide. "
-                "Short breaks, rest and a steady sleep routine can help when stress is high."), ["calendar"]
+    latest = week[0]
+    pred = latest_prediction(latest.log_id)
+    if pred:
+        lines.append(
+            f"Latest prediction ({latest.log_date}): stress = {pred.stress_level}, "
+            f"work-life balance score = {pred.wlb_score} ({pred.wlb_band})."
+        )
+    else:
+        lines.append(f"Latest log date: {latest.log_date}. No stress/WLB prediction available yet.")
 
-    if intent == "work_life_balance":
-        scores = [p.wlb_score for p in (latest_prediction(l.log_id) for l in week)
-                  if p and p.wlb_score is not None]
-        if not scores:
-            return "Your recent records have no balance scores yet. Save a day again to calculate one.", ["daily"]
-        avg = round(sum(scores) / len(scores))
-        hours = round(sum(l.working_hours for l in week) / n, 1)
-        tip = WORK_TIPS.get(profile.get("work_mode"), DEFAULT_WORK_TIP)
-        return (f"Your balance score averaged {avg} over your recent scored days, and you worked "
-                f"about {hours} hours a day. {tip}"), ["simulator", "calendar"]
-
-    if intent == "activity":
-        total = sum(l.activity_minutes for l in week)
-        met = sum(1 for l in week if l.activity_minutes >= 30)
-        return (f"In your last {n} logged day(s) you were active for {total} minutes in total, "
-                f"and {met} of those days reached the 30-minute target. " + GENERAL_TIPS[2]), ["simulator"]
-
-    if intent == "hydration_food":
-        return (f"Your latest record shows {latest.water_litres} litres of water and "
-                f"{latest.meal_regularity.lower()} meals. A common guide is about 2 litres of water a day. "
-                + GENERAL_TIPS[1] + " " + GENERAL_TIPS[3]), ["daily"]
-
-    return UNCLEAR_TEXT, []
+    return "\n".join(lines)
 
 
-def action_links(keys):
-    return [{"label": LINKS[k][0], "path": LINKS[k][1]} for k in keys]
+SYSTEM_PROMPT_TEMPLATE = """\
+You are a friendly wellness assistant embedded in the Life Balance app.
+Your job is to help users understand their own wellness data and give practical, \
+evidence-based tips on sleep, stress, work-life balance, physical activity, hydration and nutrition.
 
+Rules:
+- ALWAYS keep replies SHORT — 1 to 3 sentences maximum. No long paragraphs.
+- Be warm, direct and non-judgmental.
+- Base answers on the user data provided below whenever relevant.
+- Never diagnose medical conditions or prescribe medication.
+- If you mention numbers from the user's data, be accurate.
+- End with one small, actionable suggestion when truly helpful — keep it one sentence.
+- Do NOT make up data the user has not recorded.
+- Avoid filler phrases, preambles, or restating the question.
+
+{user_context}
+"""
+
+LINKS_HINT = {
+    "sleep": ["simulator", "daily"],
+    "stress": ["calendar", "daily"],
+    "balance": ["simulator", "calendar"],
+    "work": ["simulator", "calendar"],
+    "activity": ["simulator", "daily"],
+    "water": ["daily"],
+    "hydration": ["daily"],
+    "food": ["daily"],
+    "meal": ["daily"],
+    "dashboard": ["dashboard"],
+    "report": ["dashboard", "calendar"],
+    "tip": ["daily"],
+}
+
+
+def suggest_links(message: str) -> list:
+    lower = message.lower()
+    keys = set()
+    for keyword, link_keys in LINKS_HINT.items():
+        if keyword in lower:
+            keys.update(link_keys)
+    return [{"label": LINKS[k][0], "path": LINKS[k][1]} for k in keys if k in LINKS]
+
+
+# ── Groq call ──────────────────────────────────────────────────────────────────
+
+def call_groq(system_prompt: str, history: list, user_message: str) -> str:
+    client = Groq(api_key=GROQ_API_KEY)
+
+    messages = [{"role": "system", "content": system_prompt}]
+    # Add recent history (last 10 turns) for conversational context
+    for h in history[-10:]:
+        role = "user" if h.sender == "user" else "assistant"
+        messages.append({"role": role, "content": h.message})
+    messages.append({"role": "user", "content": user_message})
+
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
+        messages=messages,
+        max_tokens=200,
+        temperature=0.7,
+    )
+    return response.choices[0].message.content.strip()
+
+
+# ── Flask routes ───────────────────────────────────────────────────────────────
 
 @chat_bp.route("", methods=["POST"])
-@limiter.limit("30 per minute")
+@limiter.limit("30 per minute", methods=["POST"])
 @jwt_required()
 def chat():
     user_id = int(get_jwt_identity())
@@ -198,21 +194,46 @@ def chat():
         return jsonify({"error": "Please keep messages under 500 characters."}), 400
 
     lower = message.lower()
-    if needs_support(lower):
-        intent, confidence, text, keys = "safety", 1.0, SAFETY_TEXT, []
-    else:
-        intent, confidence = classify(lower)
-        text, keys = answer(intent, user_id, profile_dict(user_id))
 
-    db.session.add(ChatMessage(user_id=user_id, sender="user", message=message, intent=intent))
-    db.session.add(ChatMessage(user_id=user_id, sender="bot", message=text, intent=intent))
+    # Safety check — bypass Groq entirely
+    if needs_support(lower):
+        text = SAFETY_TEXT
+        db.session.add(ChatMessage(user_id=user_id, sender="user", message=message, intent="safety"))
+        db.session.add(ChatMessage(user_id=user_id, sender="bot", message=text, intent="safety"))
+        db.session.commit()
+        return jsonify({
+            "intent": "safety",
+            "confidence": 1.0,
+            "text": text,
+            "actions": [],
+            "disclaimer": DISCLAIMER,
+        }), 200
+
+    # Build context and call Groq
+    user_context = build_user_context(user_id)
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(user_context=user_context)
+
+    # Fetch recent history for conversational context
+    history = (ChatMessage.query.filter_by(user_id=user_id)
+               .order_by(ChatMessage.msg_id.desc()).limit(20).all())
+    history.reverse()
+
+    try:
+        text = call_groq(system_prompt, history, message)
+    except Exception as exc:
+        return jsonify({"error": f"Could not reach the AI service: {exc}"}), 502
+
+    actions = suggest_links(message)
+
+    db.session.add(ChatMessage(user_id=user_id, sender="user", message=message, intent="groq"))
+    db.session.add(ChatMessage(user_id=user_id, sender="bot", message=text, intent="groq"))
     db.session.commit()
 
     return jsonify({
-        "intent": intent,
-        "confidence": round(confidence, 2),
+        "intent": "groq",
+        "confidence": 1.0,
         "text": text,
-        "actions": action_links(keys),
+        "actions": actions,
         "disclaimer": DISCLAIMER,
     }), 200
 
